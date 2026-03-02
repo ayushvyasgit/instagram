@@ -53,30 +53,29 @@ services:
   # PostgreSQL
   # ----------------------------------
   postgres:
-  image: postgres:19.0
-  container_name: postgres
-  restart: always
-  env_file:
-    - .local.env
-  environment:    
-    POSTGRES_USER: ${POSTGRES_USER}
-    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    POSTGRES_DB: ${POSTGRES_DB}
-  volumes:
-    - postgres_data:/var/lib/postgresql/data
-  healthcheck:
-    test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
-    interval: 10s
-    timeout: 5s
-    retries: 5
-  networks:
-    - backend
+    image: postgres:17-alpine
+    container_name: postgres
+    restart: always
+    env_file:
+      - .local.env
+    # POSTGRES_USER / POSTGRES_PASSWORD / POSTGRES_DB
+    # are read directly from .local.env by the image
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - backend
 
   # ----------------------------------
   # Redis - Cache
   # ----------------------------------
   redis_cache:
     image: redis:7
+    container_name: redis_cache
     restart: always
     networks:
       - backend
@@ -86,6 +85,7 @@ services:
   # ----------------------------------
   redis_rate:
     image: redis:7
+    container_name: redis_rate
     restart: always
     networks:
       - backend
@@ -95,12 +95,14 @@ services:
   # ----------------------------------
   minio:
     image: minio/minio
+    container_name: minio
     command: server /data
+    restart: always
     env_file:
       - .local.env
     environment:
-      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
-      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+      MINIO_ROOT_USER: admin              # matches .local.env
+      MINIO_ROOT_PASSWORD: strongminio123 # matches .local.env
     volumes:
       - minio_data:/data
     networks:
@@ -111,10 +113,10 @@ services:
   # ----------------------------------
   zookeeper:
     image: confluentinc/cp-zookeeper:7.5.0
-    env_file:
-      - .local.env
+    container_name: zookeeper
+    restart: always
     environment:
-      ZOOKEEPER_CLIENT_PORT: ${ZOOKEEPER_PORT}
+      ZOOKEEPER_CLIENT_PORT: 2181
     networks:
       - backend
 
@@ -123,20 +125,20 @@ services:
   # ----------------------------------
   kafka:
     image: confluentinc/cp-kafka:7.5.0
+    container_name: kafka
+    restart: always
     depends_on:
       - zookeeper
-    env_file:
-      - .local.env
     environment:
       KAFKA_BROKER_ID: 1
-      KAFKA_ZOOKEEPER_CONNECT: zookeeper:${ZOOKEEPER_PORT}
-      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:${KAFKA_BROKER_PORT}
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:2181
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
     networks:
       - backend
 
 networks:
-  backend:
+  backend: {}
 
 volumes:
   postgres_data:
