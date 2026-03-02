@@ -1,0 +1,143 @@
+version: "3.8"
+
+services:
+
+  # ----------------------------------
+  # NGINX (Production Reverse Proxy)
+  # ----------------------------------
+  nginx:
+    image: nginx:latest
+    container_name: nginx
+    restart: always
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - backend
+      - frontend
+    networks:
+      - backend
+
+  # ----------------------------------
+  # Backend API
+  # ----------------------------------
+  backend:
+    build: ./backend
+    container_name: instagram_backend
+    restart: always
+    env_file:
+      - .local.env
+    depends_on:
+      - postgres
+      - redis_cache
+      - redis_rate
+      - minio
+      - kafka
+    networks:
+      - backend
+
+  # ----------------------------------
+  # Frontend (Production Build)
+  # ----------------------------------
+  frontend:
+    build: ./frontend
+    container_name: instagram_frontend
+    restart: always
+    env_file:
+      - .local.env
+    networks:
+      - backend
+
+  # ----------------------------------
+  # PostgreSQL
+  # ----------------------------------
+  postgres:
+  image: postgres:19.0
+  container_name: postgres
+  restart: always
+  env_file:
+    - .local.env
+  environment:
+    POSTGRES_USER: ${POSTGRES_USER}
+    POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    POSTGRES_DB: ${POSTGRES_DB}
+  volumes:
+    - postgres_data:/var/lib/postgresql/data
+  healthcheck:
+    test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER}"]
+    interval: 10s
+    timeout: 5s
+    retries: 5
+  networks:
+    - backend
+
+  # ----------------------------------
+  # Redis - Cache
+  # ----------------------------------
+  redis_cache:
+    image: redis:7
+    restart: always
+    networks:
+      - backend
+
+  # ----------------------------------
+  # Redis - Rate Limit
+  # ----------------------------------
+  redis_rate:
+    image: redis:7
+    restart: always
+    networks:
+      - backend
+
+  # ----------------------------------
+  # MinIO
+  # ----------------------------------
+  minio:
+    image: minio/minio
+    command: server /data
+    env_file:
+      - .local.env
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD}
+    volumes:
+      - minio_data:/data
+    networks:
+      - backend
+
+  # ----------------------------------
+  # Zookeeper
+  # ----------------------------------
+  zookeeper:
+    image: confluentinc/cp-zookeeper:7.5.0
+    env_file:
+      - .local.env
+    environment:
+      ZOOKEEPER_CLIENT_PORT: ${ZOOKEEPER_PORT}
+    networks:
+      - backend
+
+  # ----------------------------------
+  # Kafka
+  # ----------------------------------
+  kafka:
+    image: confluentinc/cp-kafka:7.5.0
+    depends_on:
+      - zookeeper
+    env_file:
+      - .local.env
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: zookeeper:${ZOOKEEPER_PORT}
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:${KAFKA_BROKER_PORT}
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+    networks:
+      - backend
+
+networks:
+  backend:
+
+volumes:
+  postgres_data:
+  minio_data:
