@@ -52,7 +52,7 @@ export class LikeCommands {
 
     // Remove like
     await likeRepository.unlikePost(userId, postId);
-
+ 
     // Publish event
     await publishEvent(TOPICS.LIKE_REMOVED, {
       type: 'LIKE_REMOVED',

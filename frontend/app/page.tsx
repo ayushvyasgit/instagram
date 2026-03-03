@@ -73,21 +73,20 @@ export default function FeedPage() {
   };
 
   const loadInitialFeed = async () => {
-    if (!user?.id) return;
     try {
       dispatch(setFeedLoading(true));
-      const res = await postAPI.getUserPosts(user.id, 1, 10);
+      const res = await postAPI.getFeed(1, 10);
       const { posts, pagination } = res.data.data;
       dispatch(setFeedPosts({ posts, total: pagination.total, hasMore: pagination.hasMore }));
     } catch { dispatch(setFeedLoading(false)); }
   };
 
   const loadMorePosts = async () => {
-    if (feedLoadingMore || !feedHasMore || !user?.id) return;
+    if (feedLoadingMore || !feedHasMore) return;
     try {
       dispatch(setFeedLoadingMore(true));
       const nextPage = feedPage + 1;
-      const res = await postAPI.getUserPosts(user.id, nextPage, 10);
+      const res = await postAPI.getFeed(nextPage, 10);
       const { posts, pagination } = res.data.data;
       if (posts.length > 0) dispatch(appendFeedPosts({ posts, total: pagination.total, hasMore: pagination.hasMore, page: nextPage }));
       else dispatch(setFeedLoadingMore(false));
