@@ -19,6 +19,7 @@ export const createPostSchema = Joi.object({
 });
 
 export const createCommentSchema = Joi.object({
+  postId: Joi.string().uuid().required(),
   content: Joi.string().min(1).max(2000).required(),
   parentId: Joi.string().uuid().optional(),
 });

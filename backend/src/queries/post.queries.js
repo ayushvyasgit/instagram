@@ -47,23 +47,26 @@ export class PostQueries {
     return posts;
   }
 
-  async getFeed(userId, page = 1, limit = 20) {
+  async getFeed(userId, page = 1, limit = 10) {
     const offset = (page - 1) * limit;
     
     // Try cache
-    const cacheKey = `feed:${userId}:page:${page}:limit:${limit}`;
+    const cacheKey = `feed:all:page:${page}:limit:${limit}:user:${userId}`;
     const cached = await cacheService.get(cacheKey);
     if (cached) {
       return cached;
     }
 
-    // Query database
-    const posts = await postRepository.getFeed(userId, limit, offset);
+    // Query database - get ALL posts from all users
+    const posts = await postRepository.getAllPosts(userId, limit, offset);
+    const total = await postRepository.getTotalPostCount();
 
-    // Cache for 3 minutes (feed changes frequently)
-    await cacheService.set(cacheKey, posts, 180);
+    const result = { posts, total };
 
-    return posts;
+    // Cache for 1 minute (feed changes frequently)
+    await cacheService.set(cacheKey, result, 60);
+
+    return result;
   }
 }
 

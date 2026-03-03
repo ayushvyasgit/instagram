@@ -54,6 +54,27 @@ export class PostRepository {
     return result.rows;
   }
 
+  async getAllPosts(currentUserId, limit = 10, offset = 0) {
+    const result = await query(
+      `SELECT p.*, u.username, u.profile_picture_url,
+              EXISTS(SELECT 1 FROM likes WHERE post_id = p.id AND user_id = $1) as user_liked
+       FROM posts p
+       INNER JOIN users u ON p.user_id = u.id
+       WHERE p.deleted_at IS NULL
+       ORDER BY p.created_at DESC
+       LIMIT $2 OFFSET $3`,
+      [currentUserId, limit, offset]
+    );
+    return result.rows;
+  }
+
+  async getTotalPostCount() {
+    const result = await query(
+      'SELECT COUNT(*) as total FROM posts WHERE deleted_at IS NULL'
+    );
+    return parseInt(result.rows[0].total);
+  }
+
   async deletePost(postId, userId) {
     const result = await query(
       `UPDATE posts 
