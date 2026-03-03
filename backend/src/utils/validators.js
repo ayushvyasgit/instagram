@@ -1,10 +1,11 @@
 import Joi from 'joi';
 
 export const registerSchema = Joi.object({
-  username: Joi.string().alphanum().min(3).max(30).required(),
+  username: Joi.string().pattern(/^[a-zA-Z0-9._]+$/).min(3).max(30).required()
+    .messages({ 'string.pattern.base': 'Username can only contain letters, numbers, periods, and underscores' }),
   email: Joi.string().email().required(),
   password: Joi.string().min(8).required(),
-  bio: Joi.string().max(500).optional(),
+  bio: Joi.string().max(500).allow('').optional(),
 });
 
 export const loginSchema = Joi.object({

@@ -23,10 +23,21 @@ app.use(helmet({
 
 // CORS configuration
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: (origin, callback) => {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    // Allow any localhost port for development
+    if (/^http:\/\/localhost:\d+$/.test(origin)) {
+      return callback(null, true);
+    }
+    const allowed = process.env.FRONTEND_URL || 'http://localhost:3000';
+    if (origin === allowed) return callback(null, true);
+    
+    return callback(new Error('Not allowed by CORS'));
+  },
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
 }));
 
 // Body parsing middleware
