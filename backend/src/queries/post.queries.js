@@ -28,18 +28,18 @@ export class PostQueries {
     return post;
   }
 
-  async getUserPosts(userId, page = 1, limit = 20) {
+  async getUserPosts(userId, page = 1, limit = 20, currentUserId = null) {
     const offset = (page - 1) * limit;
     
     // Try cache
-    const cacheKey = `posts:user:${userId}:page:${page}:limit:${limit}`;
+    const cacheKey = `posts:user:${userId}:page:${page}:limit:${limit}:viewer:${currentUserId}`;
     const cached = await cacheService.get(cacheKey);
     if (cached) {
       return cached;
     }
 
     // Query database
-    const posts = await postRepository.findByUserId(userId, limit, offset);
+    const posts = await postRepository.findByUserId(userId, limit, offset, currentUserId);
 
     // Cache for 3 minutes
     await cacheService.set(cacheKey, posts, 180);

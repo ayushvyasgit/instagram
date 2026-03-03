@@ -74,13 +74,14 @@ router.get('/:id', apiRateLimiter, async (req, res, next) => {
  * @desc    Get user's posts
  * @access  Public
  */
-router.get('/user/:userId', apiRateLimiter, async (req, res, next) => {
+router.get('/user/:userId', authenticate, apiRateLimiter, async (req, res, next) => {
   try {
     const { page = 1, limit = 20 } = req.query;
     const posts = await postQueries.getUserPosts(
       req.params.userId,
       parseInt(page),
-      parseInt(limit)
+      parseInt(limit),
+      req.user.id
     );
 
     res.status(200).json({

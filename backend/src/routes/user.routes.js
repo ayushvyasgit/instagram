@@ -20,9 +20,7 @@ router.get('/search', authenticate, apiRateLimiter, async (req, res, next) => {
         data: { users: [] },
       });
     }
-
     const users = await userRepository.searchUsers(q, 20);
-
     res.status(200).json({
       success: true,
       data: { users },

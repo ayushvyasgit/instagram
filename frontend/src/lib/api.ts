@@ -116,3 +116,9 @@ export const likeAPI = {
   likeComment: (commentId: string) => api.post(`/likes/comment/${commentId}`),
   unlikeComment: (commentId: string) => api.delete(`/likes/comment/${commentId}`),
 };
+
+// User API
+export const userAPI = {
+  searchUsers: (q: string) => api.get('/users/search', { params: { q } }),
+  getUserProfile: (id: string) => api.get(`/users/${id}`),
+};

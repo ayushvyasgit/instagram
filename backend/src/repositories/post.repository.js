@@ -26,7 +26,8 @@ export class PostRepository {
 
   async findByUserId(userId, limit = 20, offset = 0) {
     const result = await query(
-      `SELECT p.*, u.username, u.profile_picture_url
+      `SELECT p.*, u.username, u.profile_picture_url,
+              EXISTS(SELECT 1 FROM likes WHERE post_id = p.id AND user_id = $1) as user_liked
        FROM posts p
        INNER JOIN users u ON p.user_id = u.id
        WHERE p.user_id = $1 AND p.deleted_at IS NULL
