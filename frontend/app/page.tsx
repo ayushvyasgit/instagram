@@ -1,8 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { postAPI } from '@/lib/api';
-import { useAuthStore } from '@/stores/authStore';
+import { postAPI } from '@/src/lib/api';
+import { useAuthStore } from '@/src/stores/authStore';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 
