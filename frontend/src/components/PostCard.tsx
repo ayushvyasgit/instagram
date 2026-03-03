@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import Image from 'next/image';
+import Link from 'next/link';
 import { likeAPI, commentAPI, postAPI } from '@/src/lib/api';
 
 interface PostCardProps {
@@ -162,13 +163,15 @@ export default function PostCard({ post, currentUserId, onPostDeleted, showDelet
       {/* Post Header */}
       <div className="flex items-center justify-between p-3">
         <div className="flex items-center space-x-2">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 to-fuchsia-600 p-[2px]">
+          <Link href={`/profile/${post.user_id || post.userId}`} className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 to-fuchsia-600 p-[2px] cursor-pointer hover:opacity-80">
             <div className="w-full h-full bg-white rounded-full border border-gray-200 flex items-center justify-center overflow-hidden">
               <span className="font-bold text-xs text-black">{post.username?.charAt(0).toUpperCase()}</span>
             </div>
-          </div>
+          </Link>
           <div>
-            <span className="font-semibold text-black">{post.username}</span>
+            <Link href={`/profile/${post.user_id || post.userId}`} className="font-semibold text-black hover:underline cursor-pointer">
+              {post.username}
+            </Link>
             <span className="text-black text-xs ml-2">
               • {new Date(post.created_at).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
             </span>

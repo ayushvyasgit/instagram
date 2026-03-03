@@ -500,7 +500,14 @@ export default function FeedPage() {
                     <div className="feed-search-msg">Searching...</div>
                   ) : searchResults.length > 0 ? (
                     searchResults.map((result) => (
-                      <div key={result.id} className="feed-search-item">
+                      <div 
+                        key={result.id} 
+                        className="feed-search-item"
+                        onClick={() => {
+                          setShowDropdown(false);
+                          router.push(`/profile/${result.id}`);
+                        }}
+                      >
                         <div className="feed-search-avatar">
                           {result.profile_picture_url ? (
                             <img src={result.profile_picture_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
