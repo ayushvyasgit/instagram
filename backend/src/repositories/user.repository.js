@@ -88,5 +88,16 @@ export class UserRepository {
     );
     return result.rows[0];
   }
+  async searchUsers(searchQuery, limit = 20) {
+    const result = await query(
+      `SELECT id, username, bio, profile_picture_url
+       FROM users
+       WHERE username ILIKE $1 AND deleted_at IS NULL
+       ORDER BY username ASC
+       LIMIT $2`,
+      [`%${searchQuery}%`, limit]
+    );
+    return result.rows;
+  }
 }
 export default new UserRepository();

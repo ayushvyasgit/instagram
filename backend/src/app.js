@@ -10,6 +10,7 @@ import authRoutes from './routes/auth.routes.js';
 import postRoutes from './routes/post.routes.js';
 import commentRoutes from './routes/comment.routes.js';
 import likeRoutes from './routes/like.routes.js';
+import userRoutes from './routes/user.routes.js';
 
 // Add these routes after the auth routes line
 
@@ -70,6 +71,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/posts', postRoutes);
 app.use('/api/comments', commentRoutes);
 app.use('/api/likes', likeRoutes);
+app.use('/api/users', userRoutes);
 
 // 404 handler
 app.use(notFoundHandler);
