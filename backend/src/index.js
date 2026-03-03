@@ -1,6 +1,7 @@
 import app from './app.js';
 import { config } from './config/env.js';
-import pool, { initializeDatabase } from './config/database.js';
+import pool from './config/database.js';
+import { initializeDatabase } from './config/database.js';
 import redis from './config/redis.js';
 import { initializeBucket } from './config/minio.js';
 import { initializeKafka, disconnectKafka } from './config/kafka.js';

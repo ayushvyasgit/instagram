@@ -5,22 +5,28 @@ import { NotFoundError, ForbiddenError } from '../utils/errors.js';
 import { cacheService } from '../config/redis.js';
 
 export class PostCommands {
-  async createPost({ userId, caption, files, mediaType = 'image' }) {
+  async createPost({ userId, caption, files, mediaType = 'image' }) {  // ← Add default here
     // Upload files to MinIO
     const uploadPromises = files.map((file) =>
       uploadService.uploadFile(file, userId, 'posts')
     );
     const uploadedFiles = await Promise.all(uploadPromises);
-
-    // Extract URLs
+  
     const mediaUrls = uploadedFiles.map((file) => file.url);
-
-    // Create post in database
+  
+    // Determine media type
+    let finalMediaType = 'image';  // default
+    if (files.length > 1) {
+      finalMediaType = 'carousel';
+    } else if (mediaType === 'video') {
+      finalMediaType = 'video';
+    }
+  
     const post = await postRepository.createPost({
       userId,
       caption,
       mediaUrls,
-      mediaType: files.length > 1 ? 'carousel' : mediaType,
+      mediaType: finalMediaType,  // ← Always valid now
     });
 
     // Publish event to Kafka

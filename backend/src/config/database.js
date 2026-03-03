@@ -33,5 +33,13 @@ export const query = async (text, params) => {
 export const getClient = () => {
   return pool.connect();
 };
-
+export const initializeDatabase = async () => {
+  try {
+    await pool.query('SELECT NOW()');
+    console.log('✅ Database connected');
+  } catch (error) {
+    console.error('❌ Database connection failed:', error);
+    throw error;
+  }
+};
 export default pool;
