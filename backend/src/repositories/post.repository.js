@@ -76,6 +76,14 @@ export class PostRepository {
     return parseInt(result.rows[0].total);
   }
 
+  async getUserPostCount(userId) {
+    const result = await query(
+      'SELECT COUNT(*) as total FROM posts WHERE user_id = $1 AND deleted_at IS NULL',
+      [userId]
+    );
+    return parseInt(result.rows[0].total);
+  }
+
   async deletePost(postId, userId) {
     const result = await query(
       `UPDATE posts 

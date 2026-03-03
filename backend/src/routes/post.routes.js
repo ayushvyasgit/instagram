@@ -77,7 +77,7 @@ router.get('/:id', apiRateLimiter, async (req, res, next) => {
 router.get('/user/:userId', authenticate, apiRateLimiter, async (req, res, next) => {
   try {
     const { page = 1, limit = 20 } = req.query;
-    const posts = await postQueries.getUserPosts(
+    const result = await postQueries.getUserPosts(
       req.params.userId,
       parseInt(page),
       parseInt(limit),
@@ -87,11 +87,12 @@ router.get('/user/:userId', authenticate, apiRateLimiter, async (req, res, next)
     res.status(200).json({
       success: true,
       data: {
-        posts,
+        posts: result.posts,
         pagination: {
           page: parseInt(page),
           limit: parseInt(limit),
-          total: posts.length,
+          total: result.total,
+          hasMore: (parseInt(page) * parseInt(limit)) < result.total,
         },
       },
     });

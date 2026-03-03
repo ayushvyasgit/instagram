@@ -40,11 +40,14 @@ export class PostQueries {
 
     // Query database
     const posts = await postRepository.findByUserId(userId, limit, offset, currentUserId);
+    const total = await postRepository.getUserPostCount(userId);
+
+    const result = { posts, total };
 
     // Cache for 3 minutes
-    await cacheService.set(cacheKey, posts, 180);
+    await cacheService.set(cacheKey, result, 180);
 
-    return posts;
+    return result;
   }
 
   async getFeed(userId, page = 1, limit = 10) {
