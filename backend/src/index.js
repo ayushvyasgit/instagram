@@ -18,7 +18,7 @@ const gracefulShutdown = async (signal) => {
       // Close database connections
       await pool.end();
       console.log('Database connections closed');
-      // Close Redis connection
+      // Close Redis connectioninitializeDatabase
       await redis.quit();
       await disconnectKafka();
       console.log('Kafka connections closed');
