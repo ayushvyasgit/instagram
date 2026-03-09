@@ -23,166 +23,145 @@ export default function Sidebar({ onCreateClick }: SidebarProps) {
   return (
     <>
       <style>{`
-        .ig-sidebar {
+        /*
+         * CSS vars are defined in Navbar.tsx (:root).
+         * Sidebar just consumes them — no duplication.
+         */
+
+        .sb {
           position: fixed;
-          left: 0; top: 0; bottom: 0;
-          z-index: 100;
-          width: 72px;
-          background: #000;
-          border-right: 1px solid #262626;
+          left: 0;
+          top: var(--nb-h);        /* starts below navbar */
+          bottom: 0;
+          width: var(--sb-w);
+          z-index: 200;
+          background: rgba(0,0,0,0.92);
+          backdrop-filter: blur(16px);
+          -webkit-backdrop-filter: blur(16px);
+          border-right: 1px solid var(--border);
           display: flex;
           flex-direction: column;
-          padding: 8px 0;
+          padding: 10px 0;
+          box-sizing: border-box;
+          transition: width 0.25s ease;
         }
-
         @media (min-width: 1280px) {
-          .ig-sidebar { width: 244px; padding: 8px 12px; }
+          .sb { width: var(--sb-w-xl); padding: 10px 10px; }
         }
 
-        .ig-sidebar-header {
-          padding: 20px 0 24px;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+        /* In-flow spacer — same width as fixed sidebar */
+        .sb-spacer {
+          flex-shrink: 0;
+          width: var(--sb-w);
         }
-
         @media (min-width: 1280px) {
-          .ig-sidebar-header { padding: 24px 12px 28px; justify-content: flex-start; }
+          .sb-spacer { width: var(--sb-w-xl); }
         }
 
-        .ig-logo-icon { display: flex; color: #f5f5f5; }
-
-        .ig-logo-wordmark {
-          display: none;
-          font-size: 22px;
-          font-weight: 700;
-          color: #f5f5f5;
-          letter-spacing: -0.5px;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          white-space: nowrap;
-        }
-
-        @media (min-width: 1280px) {
-          .ig-logo-wordmark { display: block; }
-          .ig-logo-icon { display: none; }
-        }
-
-        .ig-nav-list {
+        /* ── Nav items ── */
+        .sb-list {
           display: flex;
           flex-direction: column;
-          gap: 2px;
+          gap: 1px;
           flex: 1;
+          overflow-y: auto;
+          scrollbar-width: none;
         }
+        .sb-list::-webkit-scrollbar { display: none; }
 
-        .ig-nav-item {
+        .sb-item {
           display: flex;
           align-items: center;
-          gap: 16px;
-          padding: 12px 0;
+          gap: 14px;
+          height: 48px;
+          padding: 0;
+          justify-content: center;
           border-radius: 10px;
           cursor: pointer;
-          color: #a8a8a8;
-          transition: background 0.15s ease, color 0.15s ease;
+          color: var(--text-secondary);
           text-decoration: none;
           white-space: nowrap;
-          justify-content: center;
           background: none;
           border: none;
           width: 100%;
           font-size: 15px;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+          transition: background 0.14s, color 0.14s;
         }
-
         @media (min-width: 1280px) {
-          .ig-nav-item { justify-content: flex-start; padding: 12px 12px; }
+          .sb-item { justify-content: flex-start; padding: 0 12px; }
         }
+        .sb-item:hover  { background: var(--bg-hover); color: var(--text-primary); }
+        .sb-item.active { color: var(--text-primary); }
+        .sb-item.active:hover { background: var(--bg-hover); }
 
-        .ig-nav-item:hover { background: #1a1a1a; color: #f5f5f5; }
-        .ig-nav-item.active { color: #f5f5f5; }
-        .ig-nav-item.active:hover { background: #1a1a1a; }
-
-        .ig-nav-label {
+        .sb-label {
           display: none;
           font-weight: 400;
+          font-size: 15px;
           color: inherit;
         }
+        .sb-item.active .sb-label { font-weight: 600; }
+        @media (min-width: 1280px) { .sb-label { display: block; } }
 
-        .ig-nav-item.active .ig-nav-label { font-weight: 600; }
-
-        @media (min-width: 1280px) {
-          .ig-nav-label { display: block; }
-        }
-
-        .ig-avatar-wrap {
-          width: 26px;
-          height: 26px;
+        /* Avatar */
+        .sb-avatar {
+          width: 24px; height: 24px;
           border-radius: 50%;
-          background: #333;
+          background: #1e1e1e;
           overflow: hidden;
-          display: flex;
-          align-items: center;
-          justify-content: center;
+          display: flex; align-items: center; justify-content: center;
           flex-shrink: 0;
-          border: 2px solid transparent;
-          transition: border-color 0.15s ease;
+          border: 1.5px solid transparent;
+          transition: border-color 0.14s;
         }
+        .sb-item.active .sb-avatar { border-color: var(--text-primary); }
+        .sb-avatar img { width: 100%; height: 100%; object-fit: cover; }
 
-        .ig-nav-item.active .ig-avatar-wrap { border-color: #f5f5f5; }
+        /* Divider */
+        .sb-divider {
+          height: 1px;
+          background: var(--border);
+          margin: 6px 10px;
+        }
+        @media (min-width: 1280px) { .sb-divider { margin: 6px 12px; } }
 
-        /* Logout pinned at bottom */
-        .ig-logout-btn {
+        /* Logout */
+        .sb-logout {
           display: flex;
           align-items: center;
-          gap: 16px;
-          padding: 12px 0;
+          gap: 14px;
+          height: 44px;
+          padding: 0;
+          justify-content: center;
           border-radius: 10px;
           cursor: pointer;
-          color: #737373;
-          transition: background 0.15s ease, color 0.15s ease;
-          white-space: nowrap;
-          justify-content: center;
+          color: var(--text-muted);
           background: none;
           border: none;
           width: 100%;
           font-size: 15px;
           font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-          margin-bottom: 8px;
+          transition: background 0.14s, color 0.14s;
+          flex-shrink: 0;
+          margin-bottom: 6px;
         }
-
-        @media (min-width: 1280px) {
-          .ig-logout-btn { justify-content: flex-start; padding: 12px 12px; }
+        @media (min-width: 1280px) { .sb-logout { justify-content: flex-start; padding: 0 12px; } }
+        .sb-logout:hover { background: rgba(237,73,86,0.08); color: #ed4956; }
+        .sb-logout-label {
+          display: none; font-weight: 400; color: inherit; font-size: 15px;
         }
-
-        .ig-logout-btn:hover { background: #1a0000; color: #ed4956; }
-
-        .ig-logout-label {
-          display: none;
-          font-weight: 400;
-          color: inherit;
-        }
-
-        @media (min-width: 1280px) {
-          .ig-logout-label { display: block; }
-        }
+        @media (min-width: 1280px) { .sb-logout-label { display: block; } }
       `}</style>
 
-      <nav className="ig-sidebar">
-        {/* Logo */}
-        <div className="ig-sidebar-header">
-          <div className="ig-logo-icon">
-            <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
-              <rect x="2" y="2" width="20" height="20" rx="6" stroke="currentColor" strokeWidth="1.8"/>
-              <circle cx="12" cy="12" r="4" stroke="currentColor" strokeWidth="1.8"/>
-              <circle cx="17.5" cy="6.5" r="1.2" fill="currentColor"/>
-            </svg>
-          </div>
-          <span className="ig-logo-wordmark">Instagram</span>
-        </div>
+      {/* ── Fixed sidebar ── */}
+      <nav className="sb" aria-label="Main navigation">
 
-        {/* Nav */}
-        <div className="ig-nav-list">
-          <Link href="/" className={`ig-nav-item ${pathname === '/' ? ' active' : ''}`}>
-             <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+        <div className="sb-list">
+
+          {/* Home */}
+          <Link href="/" className={`sb-item${pathname === '/' ? ' active' : ''}`}>
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
               <path
                 d="M9.02 2.84 3.63 7.04C2.73 7.72 2 9.23 2 10.36v7.41C2 19.92 3.07 21 4.3 21h3.4c1.23 0 2.3-1.08 2.3-2.23v-3c0-1.23 1.07-2.3 2-2.3s2 1.07 2 2.3v3c0 1.15 1.07 2.23 2.3 2.23h3.4c1.23 0 2.3-1.08 2.3-2.23V10.36c0-1.13-.73-2.64-1.63-3.32L14.98 2.85c-1.28-.99-3.35-.95-4.66-.01Z"
                 stroke="currentColor"
@@ -190,50 +169,47 @@ export default function Sidebar({ onCreateClick }: SidebarProps) {
                 fill={pathname === '/' ? 'currentColor' : 'none'}
               />
             </svg>
-            <span className="ig-nav-label">Home</span>
+            <span className="sb-label">Home</span>
           </Link>
-          <button className="ig-nav-item" onClick={onCreateClick}>
-             <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
+
+          {/* Create */}
+          <button className="sb-item" onClick={onCreateClick}>
+            <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
               <rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" strokeWidth="1.8"/>
               <path d="M12 8v8M8 12h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
             </svg>
-            <span className="ig-nav-label">Create</span>
+            <span className="sb-label">Create</span>
           </button>
 
           {/* Profile */}
-          <Link href="/profile" className={`ig-nav-item${pathname === '/profile' ? ' active' : ''}`}>
-            <div className="ig-avatar-wrap">
-              {user?.profile_picture_url ? (
-                <img
-                  src={user.profile_picture_url}
-                  alt=""
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              ) : (
-                <span style={{ fontSize: '11px', fontWeight: 700, color: '#a8a8a8' }}>
-                  {user?.username?.charAt(0).toUpperCase() || 'U'}
-                </span>
-              )}
+          <Link href="/profile" className={`sb-item${pathname === '/profile' ? ' active' : ''}`}>
+            <div className="sb-avatar">
+              {user?.profile_picture_url
+                ? <img src={user.profile_picture_url} alt=""/>
+                : <span style={{ fontSize: '10px', fontWeight: 700, color: '#555' }}>
+                    {user?.username?.charAt(0).toUpperCase() || 'U'}
+                  </span>
+              }
             </div>
-            <span className="ig-nav-label">Profile</span>
+            <span className="sb-label">Profile</span>
           </Link>
 
         </div>
 
-        {/* Logout — pinned to bottom */}
-        <button className="ig-logout-btn" onClick={handleLogout}>
-          <svg width="24" height="24" fill="none" viewBox="0 0 24 24">
-            <path
-              d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"
-              stroke="currentColor"
-              strokeWidth="1.8"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
+        <div className="sb-divider"/>
+
+        {/* Logout */}
+        <button className="sb-logout" onClick={handleLogout}>
+          <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
+            <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"
+              stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
           </svg>
-          <span className="ig-logout-label">Log out</span>
+          <span className="sb-logout-label">Log out</span>
         </button>
       </nav>
+
+      {/* ── In-flow spacer — pushes page content right ── */}
+      <div className="sb-spacer" aria-hidden="true"/>
     </>
   );
 }

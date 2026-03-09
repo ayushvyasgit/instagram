@@ -1,36 +1,45 @@
-import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import type { Metadata, Viewport } from "next";
+import { GeistSans } from "geist/font/sans";
+import { GeistMono } from "geist/font/mono";
 import "./globals.css";
 import ReduxProvider from "@/src/store/ReduxProvider";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
-});
-
 export const metadata: Metadata = {
-  title: "Instagram",
-  description: "Instagram Clone",
+  title: {
+    default: "Instagram Clone",
+    template: "%s | Instagram Clone",
+  },
+  description: "A sleek, modern Instagram-inspired social platform.",
+  keywords: ["social", "instagram", "clone"],
+  authors: [{ name: "Ayush Vyas" }],
+  creator: "Ayush Vyas",
+  openGraph: {
+    type: "website",
+    locale: "en_US",
+    siteName: "Instagram Clone",
+    title: "Instagram Clone",
+    description: "A sleek, modern Instagram-inspired social platform.",
+  },
+  icons: { icon: "/favicon.ico" },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export const viewport: Viewport = {
+  themeColor: "#000000",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
+  colorScheme: "dark",
+};
+
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+        className={`${GeistSans.variable} ${GeistMono.variable} antialiased bg-black text-white`}
+        suppressHydrationWarning
       >
-        <ReduxProvider>
-          {children}
-        </ReduxProvider>
+        <ReduxProvider>{children}</ReduxProvider>
       </body>
     </html>
   );

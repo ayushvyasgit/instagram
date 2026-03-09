@@ -1,457 +1,247 @@
 'use client';
 
-import { useEffect, useState, useCallback, use } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { postAPI, userAPI } from '@/src/lib/api';
 import { useAppSelector } from '@/src/store';
-import { useRouter } from 'next/navigation';
+import { useRouter, useParams } from 'next/navigation';
+import Navbar from '@/src/components/Navbar';
 import Sidebar from '@/src/components/Sidebar';
 import PostCard from '@/src/components/PostCard';
 import Image from 'next/image';
 
-export default function UserProfilePage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
-  const profileUserId = resolvedParams.id;
-  
-  const [loading, setLoading] = useState(true);
+export default function UserProfilePage() {
+  const params        = useParams();
+  const profileId     = params?.id as string;
+
   const [profileUser, setProfileUser] = useState<any>(null);
-  const [userPosts, setUserPosts] = useState<any[]>([]);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
-  
-  const { isAuthenticated, user: currentUser } = useAppSelector((state: any) => state.auth);
-  const router = useRouter();
+  const [posts, setPosts]             = useState<any[]>([]);
+  const [total, setTotal]             = useState(0);
+  const [page, setPage]               = useState(1);
+  const [loading, setLoading]         = useState(true);
+  const [viewMode, setViewMode]       = useState<'grid' | 'list'>('grid');
+  const itemsPerPage = 12;
+
+  const { isAuthenticated, user: me } = useAppSelector((s: any) => s.auth);
+  const router  = useRouter();
+  const endRef  = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (!isAuthenticated) { router.push('/login'); return; }
-    if (profileUserId === currentUser?.id) {
-       router.push('/profile');
-       return;
-    }
-    loadUserProfile();
-  }, [isAuthenticated, profileUserId, currentUser]);
+    if (profileId === me?.id) { router.push('/profile'); return; }
+    loadProfile();
+  }, [isAuthenticated, profileId]);
 
-  const loadUserProfile = async () => {
+  useEffect(() => {
+    if (page > 1) loadPosts(page);
+  }, [page]);
+
+  useEffect(() => {
+    const el = endRef.current;
+    if (!el) return;
+    const obs = new IntersectionObserver(([e]) => {
+      if (e.isIntersecting && posts.length < total && !loading) setPage(p => p + 1);
+    }, { threshold: 0.1 });
+    obs.observe(el);
+    return () => obs.disconnect();
+  }, [posts.length, total, loading]);
+
+  const loadProfile = async () => {
+    setLoading(true);
     try {
-      setLoading(true);
-      
-      const [userRes, postsRes] = await Promise.all([
-        userAPI.getUserProfile(profileUserId),
-        postAPI.getUserPosts(profileUserId, 1, 50)
-      ]);
-      
-      setProfileUser(userRes.data.data.user);
-      setUserPosts(postsRes.data.data.posts);
-    } catch (error) {
-      console.error('Error loading profile:', error);
-    } finally {
-      setLoading(false);
-    }
+      const res = await userAPI.getUserProfile(profileId);
+      setProfileUser(res.data.data.user);
+      await loadPosts(1);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
   };
 
-  const handlePostDeleted = useCallback((postId: string) => {
-    setUserPosts(prev => prev.filter(post => post.id !== postId));
+  const loadPosts = async (p: number) => {
+    setLoading(true);
+    try {
+      const res = await postAPI.getUserPosts(profileId, p, itemsPerPage);
+      const { posts: loaded, pagination } = res.data.data;
+      setPosts(prev => p === 1 ? loaded : [...prev, ...loaded]);
+      setTotal(pagination.total);
+    } catch (e) { console.error(e); }
+    finally { setLoading(false); }
+  };
+
+  const handleDeleted = useCallback((id: string) => {
+    setPosts(prev => prev.filter(p => p.id !== id));
   }, []);
 
-  if (!isAuthenticated || !profileUser) return null;
+  if (!isAuthenticated) return null;
 
   return (
-    <>
-      <style>{`
-        .profile-root {
-          display: flex;
-          min-height: 100vh;
-          background: #000;
-          font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-        }
+    <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#000' }}>
+      <Navbar onCreateClick={() => {}} />
 
-        .profile-main {
-          flex: 1;
-          margin-left: 72px;
-          display: flex;
-          justify-content: center;
-        }
-
-        @media (min-width: 1280px) { .profile-main { margin-left: 244px; } }
-
-        .profile-content {
-          width: 100%;
-          max-width: 935px;
-          padding: 32px 16px 0;
-        }
-
-        /* ── Header ── */
-        .profile-header {
-          display: flex;
-          align-items: flex-start;
-          gap: 32px;
-          margin-bottom: 40px;
-          padding: 0 16px;
-        }
-
-        @media (max-width: 640px) {
-          .profile-header { flex-direction: column; align-items: center; text-align: center; gap: 20px; }
-        }
-
-        /* Avatar */
-        .profile-avatar-ring {
-          width: 150px;
-          height: 150px;
-          border-radius: 50%;
-          padding: 3px;
-          background: linear-gradient(45deg, #f09433, #e6683c, #dc2743, #cc2366, #bc1888);
-          flex-shrink: 0;
-        }
-
-        .profile-avatar-inner {
-          width: 100%;
-          height: 100%;
-          border-radius: 50%;
-          background: #000;
-          overflow: hidden;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          border: 3px solid #000;
-        }
-
-        .profile-avatar-initial {
-          font-size: 52px;
-          font-weight: 300;
-          color: #555;
-        }
-
-        /* Info */
-        .profile-info { flex: 1; }
-
-        .profile-info-top {
-          display: flex;
-          align-items: center;
-          gap: 16px;
-          margin-bottom: 20px;
-          flex-wrap: wrap;
-        }
-
-        .profile-username {
-          font-size: 20px;
-          font-weight: 300;
-          color: #f5f5f5;
-          letter-spacing: 0.2px;
-        }
-
-        .profile-edit-btn {
-          background: #0095f6;
-          border: none;
-          color: #fff;
-          font-size: 14px;
-          font-weight: 600;
-          border-radius: 8px;
-          padding: 7px 16px;
-          cursor: pointer;
-          transition: background 0.15s ease;
-          font-family: inherit;
-        }
-
-        .profile-edit-btn:hover { background: #1877f2; }
-
-        .profile-stats {
-          display: flex;
-          gap: 40px;
-          margin-bottom: 16px;
-          flex-wrap: wrap;
-        }
-
-        .profile-stat {
-          font-size: 15px;
-          color: #a8a8a8;
-        }
-
-        .profile-stat strong {
-          color: #f5f5f5;
-          font-weight: 600;
-        }
-
-        .profile-bio {
-          font-size: 14px;
-          color: #f5f5f5;
-          line-height: 1.5;
-          max-width: 480px;
-        }
-
-        /* ── Tabs ── */
-        .profile-tabs {
-          border-top: 1px solid #262626;
-          display: flex;
-          justify-content: center;
-          gap: 56px;
-        }
-
-        .profile-tab {
-          padding: 14px 0;
-          font-size: 12px;
-          font-weight: 600;
-          text-transform: uppercase;
-          letter-spacing: 1px;
-          display: flex;
-          align-items: center;
-          gap: 6px;
-          cursor: pointer;
-          border: none;
-          background: none;
-          font-family: inherit;
-          transition: color 0.15s ease;
-          border-top: 1px solid transparent;
-          margin-top: -1px;
-        }
-
-        .profile-tab.active {
-          border-top-color: #f5f5f5;
-          color: #f5f5f5;
-        }
-
-        .profile-tab:not(.active) {
-          color: #737373;
-        }
-
-        .profile-tab:not(.active):hover { color: #a8a8a8; }
-
-        /* ── Loading ── */
-        .profile-loading {
-          display: flex;
-          justify-content: center;
-          padding: 80px 0;
-        }
-
-        .profile-spinner {
-          width: 32px;
-          height: 32px;
-          border-radius: 50%;
-          border: 2px solid #262626;
-          border-top-color: #a8a8a8;
-          animation: spin 0.8s linear infinite;
-        }
-
-        @keyframes spin { to { transform: rotate(360deg); } }
-
-        /* ── Empty state ── */
-        .profile-empty {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          justify-content: center;
-          padding: 80px 0;
-          text-align: center;
-        }
-        
-        .profile-empty-icon {
-          width: 80px;
-          height: 80px;
-          border-radius: 50%;
-          border: 2px solid #363636;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          margin-bottom: 20px;
-          color: #737373;
-        }
-
-        .profile-empty h2 {
-          font-size: 28px;
-          font-weight: 300;
-          color: #f5f5f5;
-          margin: 0 0 8px;
-        }
-
-        .profile-empty p {
-          font-size: 14px;
-          color: #737373;
-        }
-
-        /* ── Grid ── */
-        .profile-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 3px;
-          padding-bottom: 64px;
-        }
-
-        .profile-grid-cell {
-          position: relative;
-          aspect-ratio: 1;
-          overflow: hidden;
-          cursor: pointer;
-          background: #1a1a1a;
-        }
-
-        .profile-grid-overlay {
-          position: absolute;
-          inset: 0;
-          background: rgba(0,0,0,0.45);
-          opacity: 0;
-          transition: opacity 0.18s ease;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          gap: 24px;
-          color: #fff;
-          font-weight: 700;
-          font-size: 16px;
-        }
-
-        .profile-grid-cell:hover .profile-grid-overlay { opacity: 1; }
-
-        .profile-grid-stat {
-          display: flex;
-          align-items: center;
-          gap: 6px;
-        }
-
-        .profile-grid-no-img {
-          width: 100%;
-          height: 100%;
-          background: #1c1c1c;
-          display: flex;
-          align-items: center;
-          justify-content: center;
-          font-size: 12px;
-          color: #555;
-        }
-
-        /* ── List ── */
-        .profile-list {
-          display: flex;
-          flex-direction: column;
-          align-items: center;
-          padding-bottom: 64px;
-          padding-top: 16px;
-        }
-      `}</style>
-
-      <div className="profile-root">
+      <div style={{ display: 'flex', flex: 1 }}>
         <Sidebar onCreateClick={() => {}} />
 
-        <main className="profile-main">
-          <div className="profile-content">
-
-            {/* ── Header ── */}
-            <div className="profile-header">
-              <div className="profile-avatar-ring">
-                <div className="profile-avatar-inner">
-                  {profileUser?.profile_picture_url ? (
-                    <img
-                      src={profileUser.profile_picture_url}
-                      alt=""
-                      style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                    />
-                  ) : (
-                    <span className="profile-avatar-initial">
-                      {profileUser?.username?.charAt(0).toUpperCase() || 'U'}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="profile-info">
-                <div className="profile-info-top">
-                  <h1 className="profile-username">{profileUser?.username}</h1>
-                  <button className="profile-edit-btn">Follow</button>
-                </div>
-                <div className="profile-stats">
-                  <span className="profile-stat"><strong>{userPosts.length}</strong> posts</span>
-                  <span className="profile-stat"><strong>0</strong> followers</span>
-                  <span className="profile-stat"><strong>0</strong> following</span>
-                </div>
-                {profileUser?.bio && <p className="profile-bio">{profileUser.bio}</p>}
-              </div>
+        <main style={{ flex: 1, minWidth: 0 }}>
+          {loading && !profileUser ? (
+            <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: '60vh' }}>
+              <div style={{ width: 26, height: 26, borderRadius: '50%', border: '2px solid #1a1a1a', borderTopColor: '#444', animation: 'spin 0.8s linear infinite' }}/>
             </div>
+          ) : (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '32px 16px 72px' }}>
+              <div style={{ width: '100%', maxWidth: 935 }}>
 
-            {/* ── Tabs ── */}
-            <div className="profile-tabs">
-              <button
-                className={`profile-tab${viewMode === 'grid' ? ' active' : ''}`}
-                onClick={() => setViewMode('grid')}
-              >
-                <svg width="12" height="12" fill="none" viewBox="0 0 24 24">
-                  <rect x="3" y="3" width="18" height="18" rx="1" stroke="currentColor" strokeWidth="2"/>
-                  <path d="M9 3v18M15 3v18M3 9h18M3 15h18" stroke="currentColor" strokeWidth="2"/>
-                </svg>
-                Posts
-              </button>
-              <button
-                className={`profile-tab${viewMode === 'list' ? ' active' : ''}`}
-                onClick={() => setViewMode('list')}
-              >
-                <svg width="12" height="12" fill="none" viewBox="0 0 24 24">
-                  <rect x="3" y="3" width="18" height="18" rx="1" stroke="currentColor" strokeWidth="2"/>
-                </svg>
-                Feed
-              </button>
-            </div>
-
-            {/* ── Content ── */}
-            {loading ? (
-              <div className="profile-loading">
-                <div className="profile-spinner" />
-              </div>
-            ) : userPosts.length === 0 ? (
-              <div className="profile-empty">
-                <div className="profile-empty-icon">
-                  <svg width="40" height="40" fill="none" viewBox="0 0 24 24">
-                     <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round"/>
-                   </svg>
-                </div>
-                <h2>No Posts Yet</h2>
-                <p>This user hasn't posted anything.</p>
-              </div>
-            ) : viewMode === 'grid' ? (
-              <div className="profile-grid">
-                {userPosts.map((post: any) => (
-                  <div
-                    key={post.id}
-                    className="profile-grid-cell"
-                    onClick={() => setViewMode('list')}
-                  >
-                    {post.media_urls?.[0] ? (
-                      <Image
-                        src={post.media_urls[0]}
-                        alt=""
-                        fill
-                        style={{ objectFit: 'cover' }}
-                        unoptimized
-                      />
-                    ) : (
-                      <div className="profile-grid-no-img">No image</div>
-                    )}
-                    <div className="profile-grid-overlay">
-                      <span className="profile-grid-stat">
-                        <svg width="18" height="18" fill="white" viewBox="0 0 48 48">
-                          <path d="M34.6 3.1c-4.5 0-7.9 1.8-10.6 5.6-2.7-3.7-6.1-5.5-10.6-5.5C6 3.1 0 9.6 0 17.6c0 7.3 5.4 12 10.6 16.5.6.5 1.3 1.1 1.9 1.7l2.3 2c4.4 3.9 6.6 5.9 7.6 6.5.5.3 1.1.5 1.6.5s1.1-.2 1.6-.5c1-.6 2.8-2.2 7.8-6.8l2-1.8c.7-.6 1.3-1.2 2-1.7C42.7 29.6 48 25 48 17.6c0-8-6-14.5-13.4-14.5z"/>
-                        </svg>
-                        {post.like_count || 0}
-                      </span>
-                      <span className="profile-grid-stat">
-                        <svg width="18" height="18" fill="none" viewBox="0 0 24 24">
-                          <path d="M20.656 17.008a9.993 9.993 0 1 0-3.59 3.615L22 22Z" fill="white" strokeLinejoin="round" strokeWidth="1.5"/>
-                        </svg>
-                        {post.comment_count || 0}
-                      </span>
+                {/* ── Header ── */}
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 36, marginBottom: 44, padding: '0 4px', flexWrap: 'wrap' }}>
+                  {/* Animated avatar ring */}
+                  <div style={{ flexShrink: 0, position: 'relative', width: 106, height: 106 }}>
+                    <style>{`
+                      @keyframes ring-rotate {
+                        0%   { background-position: 0% 50%; }
+                        100% { background-position: 200% 50%; }
+                      }
+                      .up-ring {
+                        position: absolute; inset: 0; border-radius: 50%; padding: 2.5px; box-sizing: border-box;
+                        background: linear-gradient(135deg, #feda75, #fa7e1e, #d62976, #962fbf, #4f5bd5, #feda75);
+                        background-size: 300%;
+                        animation: ring-rotate 3s linear infinite;
+                      }
+                    `}</style>
+                    <div className="up-ring">
+                      <div style={{ width: '100%', height: '100%', borderRadius: '50%', background: '#000', overflow: 'hidden', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                        {profileUser?.profile_picture_url
+                          ? <img src={profileUser.profile_picture_url} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }}/>
+                          : <span style={{ fontSize: 36, fontWeight: 300, color: '#333' }}>{profileUser?.username?.charAt(0).toUpperCase()}</span>
+                        }
+                      </div>
                     </div>
                   </div>
-                ))}
+
+                  {/* Info */}
+                  <div style={{ flex: 1, minWidth: 180, paddingTop: 6 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 18, flexWrap: 'wrap' }}>
+                      <h1 style={{ margin: 0, fontSize: 22, fontWeight: 300, color: '#f0f0f0', letterSpacing: '-0.3px' }}>
+                        {profileUser?.username}
+                      </h1>
+                      <button style={{
+                        background: '#0095f6', border: 'none', color: '#fff',
+                        fontSize: 13, fontWeight: 700, borderRadius: 8, padding: '7px 18px', cursor: 'pointer',
+                        transition: 'background 0.15s',
+                      }}
+                        onMouseEnter={e => (e.currentTarget.style.background = '#1877f2')}
+                        onMouseLeave={e => (e.currentTarget.style.background = '#0095f6')}
+                      >
+                        Follow
+                      </button>
+                      <button style={{
+                        background: '#161616', border: '1px solid #2a2a2a', color: '#e0e0e0',
+                        fontSize: 13, fontWeight: 600, borderRadius: 8, padding: '6px 16px', cursor: 'pointer',
+                        transition: 'background 0.15s',
+                      }}>
+                        Message
+                      </button>
+                    </div>
+
+                    <div style={{ display: 'flex', gap: 28, marginBottom: 10, flexWrap: 'wrap' }}>
+                      {[['posts', total], ['followers', 0], ['following', 0]].map(([label, count]) => (
+                        <span key={label as string} style={{ fontSize: 14, color: '#555' }}>
+                          <strong style={{ color: '#f0f0f0', fontWeight: 600 }}>{count as number}</strong>{' '}{label}
+                        </span>
+                      ))}
+                    </div>
+
+                    {profileUser?.bio && (
+                      <p style={{ margin: 0, fontSize: 14, color: '#888', lineHeight: 1.55, maxWidth: 380 }}>
+                        {profileUser.bio}
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* ── Tabs ── */}
+                <div style={{ borderTop: '1px solid #1a1a1a', display: 'flex', justifyContent: 'center', gap: 44 }}>
+                  {(['grid', 'list'] as const).map(m => (
+                    <button key={m} onClick={() => setViewMode(m)} style={{
+                      display: 'flex', alignItems: 'center', gap: 6,
+                      padding: '12px 0', background: 'none', border: 'none', cursor: 'pointer',
+                      borderTop: viewMode === m ? '2px solid #f0f0f0' : '2px solid transparent',
+                      marginTop: -1,
+                      fontSize: 11, fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em',
+                      color: viewMode === m ? '#f0f0f0' : '#404040',
+                      transition: 'color 0.2s',
+                    }}>
+                      {m === 'grid'
+                        ? <svg width="11" height="11" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1" stroke="currentColor" strokeWidth="1.8"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18" stroke="currentColor" strokeWidth="1.8"/></svg>
+                        : <svg width="11" height="11" fill="none" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="1" stroke="currentColor" strokeWidth="1.8"/></svg>
+                      }
+                      {m === 'grid' ? 'Posts' : 'Feed'}
+                    </button>
+                  ))}
+                </div>
+
+                {/* ── Content ── */}
+                {loading && !posts.length ? (
+                  <div style={{ display: 'flex', justifyContent: 'center', padding: 80 }}>
+                    <div style={{ width: 24, height: 24, borderRadius: '50%', border: '2px solid #1a1a1a', borderTopColor: '#444', animation: 'spin 0.8s linear infinite' }}/>
+                  </div>
+                ) : !posts.length ? (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '80px 0', gap: 10, textAlign: 'center' }}>
+                    <div style={{ width: 58, height: 58, borderRadius: '50%', border: '1px solid #1a1a1a', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a2a2a' }}>
+                      <svg width="28" height="28" fill="none" viewBox="0 0 24 24"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" stroke="currentColor" strokeWidth="1.3" strokeLinejoin="round"/></svg>
+                    </div>
+                    <p style={{ margin: 0, fontSize: 18, fontWeight: 300, color: '#e0e0e0' }}>No Posts Yet</p>
+                    <p style={{ margin: 0, fontSize: 13, color: '#333' }}>This user hasn't posted anything.</p>
+                  </div>
+                ) : viewMode === 'grid' ? (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 3, paddingBottom: 48 }}>
+                    {posts.map(p => <GridCell key={p.id} post={p}/>)}
+                    {loading && (
+                      <div style={{ gridColumn: '1/-1', display: 'flex', justifyContent: 'center', padding: 20 }}>
+                        <div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid #1a1a1a', borderTopColor: '#444', animation: 'spin 0.8s linear infinite' }}/>
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 12, paddingBottom: 48 }}>
+                    {posts.map(p => <PostCard key={p.id} post={p} currentUserId={me?.id} onPostDeleted={handleDeleted}/>)}
+                    {loading && <div style={{ padding: 20 }}><div style={{ width: 20, height: 20, borderRadius: '50%', border: '2px solid #1a1a1a', borderTopColor: '#444', animation: 'spin 0.8s linear infinite' }}/></div>}
+                  </div>
+                )}
+
+                <div ref={endRef} style={{ height: 32 }}/>
               </div>
-            ) : (
-              <div className="profile-list">
-                {userPosts.map((post: any) => (
-                  <PostCard
-                    key={post.id}
-                    post={post}
-                    currentUserId={currentUser?.id}
-                    onPostDeleted={handlePostDeleted}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
+            </div>
+          )}
         </main>
       </div>
-    </>
+    </div>
+  );
+}
+
+function GridCell({ post }: { post: any }) {
+  const [hov, setHov] = useState(false);
+  return (
+    <div
+      style={{ position: 'relative', aspectRatio: '1/1', overflow: 'hidden', cursor: 'pointer', background: '#0d0d0d' }}
+      onMouseEnter={() => setHov(true)}
+      onMouseLeave={() => setHov(false)}
+    >
+      {post.media_urls?.[0]
+        ? <Image src={post.media_urls[0]} alt="" fill style={{ objectFit: 'cover', transition: 'transform 0.35s', transform: hov ? 'scale(1.04)' : 'scale(1)' }} unoptimized/>
+        : <div style={{ width: '100%', height: '100%', background: '#111', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#2a2a2a', fontSize: 12 }}>No image</div>
+      }
+      {post.media_urls?.length > 1 && (
+        <div style={{ position: 'absolute', top: 7, right: 7, zIndex: 2 }}>
+          <svg width="14" height="14" fill="none" viewBox="0 0 24 24"><rect x="6" y="2" width="16" height="16" rx="2" stroke="white" strokeWidth="1" fill="none"/><rect x="2" y="6" width="16" height="16" rx="2" fill="white" fillOpacity="0.7"/></svg>
+        </div>
+      )}
+      <div style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.45)', opacity: hov ? 1 : 0, transition: 'opacity 0.2s', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 20 }}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#fff', fontSize: 14, fontWeight: 700 }}>
+          <svg width="16" height="16" fill="white" viewBox="0 0 48 48"><path d="M34.6 3.1c-4.5 0-7.9 1.8-10.6 5.6-2.7-3.7-6.1-5.5-10.6-5.5C6 3.1 0 9.6 0 17.6c0 7.3 5.4 12 10.6 16.5.6.5 1.3 1.1 1.9 1.7l2.3 2c4.4 3.9 6.6 5.9 7.6 6.5.5.3 1.1.5 1.6.5s1.1-.2 1.6-.5c1-.6 2.8-2.2 7.8-6.8l2-1.8c.7-.6 1.3-1.2 2-1.7C42.7 29.6 48 25 48 17.6c0-8-6-14.5-13.4-14.5z"/></svg>
+          {post.like_count || 0}
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#fff', fontSize: 14, fontWeight: 700 }}>
+          <svg width="16" height="16" fill="white" viewBox="0 0 24 24"><path d="M20.656 17.008a9.993 9.993 0 1 0-3.59 3.615L22 22Z" strokeLinejoin="round"/></svg>
+          {post.comment_count || 0}
+        </span>
+      </div>
+    </div>
   );
 }

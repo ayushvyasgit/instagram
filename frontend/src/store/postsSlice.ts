@@ -4,6 +4,7 @@ interface Post {
   id: string;
   caption: string;
   media_urls: string[];
+  media_type?: 'image' | 'video' | 'carousel';
   like_count: number;
   comment_count: number;
   username: string;

@@ -93,13 +93,16 @@ export default function LoginPage() {
         }
 
         .login-card {
-          background: #000;
-          border: 1px solid #262626;
-          border-radius: 2px;
+          background: rgba(12,12,12,0.9);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 12px;
           padding: 36px 40px 24px;
           display: flex;
           flex-direction: column;
           align-items: center;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.4);
         }
 
         .login-logo {
@@ -257,9 +260,12 @@ export default function LoginPage() {
         }
 
         .login-signup-card {
-          background: #000;
-          border: 1px solid #262626;
-          border-radius: 2px;
+          background: rgba(12,12,12,0.9);
+          backdrop-filter: blur(20px);
+          -webkit-backdrop-filter: blur(20px);
+          border: 1px solid rgba(255,255,255,0.06);
+          border-radius: 12px;
+          box-shadow: 0 8px 32px rgba(0,0,0,0.4);
           padding: 18px;
           text-align: center;
           font-size: 14px;

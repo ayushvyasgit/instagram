@@ -12,6 +12,7 @@
     "@reduxjs/toolkit": "^2.11.2",
     "autoprefixer": "^10.4.17",
     "axios": "^1.6.5",
+    "geist": "^1.7.0",
     "next": "16.1.6",
     "postcss": "^8.4.33",
     "react": "19.2.3",

@@ -19,8 +19,90 @@
   }
 }
 
+/* Smooth scrollbar */
+* { scrollbar-width: thin; scrollbar-color: rgba(255,255,255,0.08) transparent; }
+*::-webkit-scrollbar { width: 4px; }
+*::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+
+/* Box-sizing */
+*, *::before, *::after { box-sizing: border-box; }
+
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
 }
+
+/* Selection color */
+::selection { background: rgba(0,149,246,0.3); }
+
+/* Focus outline for accessibility */
+:focus-visible { outline: 2px solid rgba(0,149,246,0.5); outline-offset: 2px; }
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    @apply bg-black text-white font-light antialiased;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/5 backdrop-blur-md border border-white/10 rounded-sm shadow-sm transition-all duration-300 ease-out hover:bg-white/10 hover:shadow-md hover:scale-[1.02];
+    position: relative;
+    overflow: hidden;
+  }
+  .glass-card::before {
+    content: '';
+    @apply absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent opacity-0 transition-opacity duration-300;
+  }
+  .glass-card:hover::before {
+    @apply opacity-100;
+  }
+  .glass-search {
+    @apply relative bg-white/5 backdrop-blur-sm border border-white/10 rounded-sm px-3 py-2 text-sm placeholder-gray-500 focus:border-white/20 focus:outline-none focus:ring-1 focus:ring-white/10 transition-all duration-200;
+  }
+  .carousel-slide {
+    @apply flex-shrink-0 w-full h-full transition-transform duration-400 ease-out;
+  }
+  .emerge-animation {
+    animation: emerge 0.3s ease-out forwards;
+  }
+  @keyframes emerge {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+@import "tailwindcss";
+
+/* ─── Global resets & base ─── */
+*, *::before, *::after { box-sizing: border-box; }
+
+body {
+  background: #000;
+  color: #f5f5f5;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Thin scrollbars everywhere */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255,255,255,0.08) transparent;
+}
+*::-webkit-scrollbar { width: 4px; height: 4px; }
+*::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+*::-webkit-scrollbar-track { background: transparent; }
+
+/* Text selection */
+::selection { background: rgba(0,149,246,0.28); }
+
+/* Focus ring */
+:focus-visible { outline: 2px solid rgba(0,149,246,0.55); outline-offset: 2px; }
+
+/* Spin utility (used by loading spinners) */
+@keyframes spin { to { transform: rotate(360deg); } }
+.animate-spin { animation: spin 0.8s linear infinite; }
