@@ -55,11 +55,10 @@ export default function Navbar({ onCreateClick }: NavbarProps) {
   return (
     <>
       <style>{`
-        /* ─── CSS vars shared across Navbar + Sidebar ─── */
         :root {
-          --nb-h: 52px;          /* navbar height                  */
-          --sb-w: 68px;          /* sidebar collapsed width        */
-          --sb-w-xl: 240px;      /* sidebar expanded width (≥1280) */
+          --nb-h: 52px;
+          --sb-w: 68px;
+          --sb-w-xl: 240px;
           --bg-base: #000000;
           --bg-surface: #0a0a0a;
           --bg-elevated: #141414;
@@ -71,7 +70,6 @@ export default function Navbar({ onCreateClick }: NavbarProps) {
           --accent: #0095f6;
         }
 
-        /* ─── Navbar shell ─── */
         .nb {
           position: fixed;
           inset: 0 0 auto 0;
@@ -84,17 +82,14 @@ export default function Navbar({ onCreateClick }: NavbarProps) {
           display: flex;
           align-items: center;
           padding: 0 20px;
-          gap: 16px;
           box-sizing: border-box;
         }
 
-        /* spacer that pushes page content below the fixed bar */
         .nb-spacer {
           height: var(--nb-h);
           flex-shrink: 0;
         }
 
-        /* ─── Logo ─── */
         .nb-logo {
           display: flex;
           align-items: center;
@@ -115,20 +110,15 @@ export default function Navbar({ onCreateClick }: NavbarProps) {
           background-clip: text;
           white-space: nowrap;
         }
-        /* on narrow sidebar width, hide text */
-        @media (max-width: 1279px) {
-          .nb-logo-text { display: none; }
-        }
-        @media (min-width: 1280px) {
-          .nb-logo-text { display: block; }
-        }
+        @media (max-width: 1279px) { .nb-logo-text { display: none; } }
+        @media (min-width: 1280px) { .nb-logo-text { display: block; } }
 
-        /* ─── Search ─── */
+        /* ── Search: pinned to true viewport center ── */
         .nb-search-wrap {
-          flex: 1;
-          max-width: 268px;
-          margin: 0 auto;
-          position: relative;
+          position: absolute;
+          left: 50%;
+          transform: translateX(-50%);
+          width: 268px;
         }
         .nb-search-box {
           display: flex;
@@ -165,7 +155,6 @@ export default function Navbar({ onCreateClick }: NavbarProps) {
         }
         .nb-search-clear:hover { color: var(--text-secondary); background: rgba(255,255,255,0.06); }
 
-        /* ─── Dropdown ─── */
         .nb-dropdown {
           position: absolute;
           top: calc(100% + 8px);
@@ -211,12 +200,7 @@ export default function Navbar({ onCreateClick }: NavbarProps) {
         .nb-dd-av-init { font-size: 14px; font-weight: 600; color: var(--text-muted); }
         .nb-dd-name { font-size: 14px; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
         .nb-dd-bio  { font-size: 12px; color: var(--text-secondary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 1px; }
-        .nb-dd-empty {
-          padding: 22px 14px;
-          text-align: center;
-          font-size: 13px;
-          color: var(--text-muted);
-        }
+        .nb-dd-empty { padding: 22px 14px; text-align: center; font-size: 13px; color: var(--text-muted); }
         .nb-dd-loading {
           display: flex; align-items: center; justify-content: center; gap: 8px;
           padding: 18px 14px; font-size: 13px; color: var(--text-muted);
@@ -229,7 +213,6 @@ export default function Navbar({ onCreateClick }: NavbarProps) {
           flex-shrink: 0;
         }
 
-        /* ─── Right actions ─── */
         .nb-actions { display: flex; align-items: center; gap: 2px; margin-left: auto; flex-shrink: 0; }
         .nb-btn {
           width: 38px; height: 38px; border-radius: 10px;
@@ -241,8 +224,6 @@ export default function Navbar({ onCreateClick }: NavbarProps) {
         }
         .nb-btn:hover { background: var(--bg-hover); color: var(--text-primary); }
         .nb-btn.nb-active { color: var(--text-primary); }
-
-        /* notification dot */
         .nb-dot {
           position: absolute;
           top: 7px; right: 7px;
@@ -253,7 +234,6 @@ export default function Navbar({ onCreateClick }: NavbarProps) {
         }
       `}</style>
 
-      {/* ── Fixed navbar ── */}
       <header className="nb">
         {/* Logo */}
         <Link href="/" className="nb-logo" aria-label="Home">
@@ -276,7 +256,7 @@ export default function Navbar({ onCreateClick }: NavbarProps) {
           <span className="nb-logo-text">Instagram</span>
         </Link>
 
-        {/* Search */}
+        {/* Search — absolutely centered to viewport */}
         <div className="nb-search-wrap" ref={wrapRef}>
           <div className={`nb-search-box${focused ? ' is-focused' : ''}`}>
             <span className="nb-search-icon">
@@ -305,7 +285,6 @@ export default function Navbar({ onCreateClick }: NavbarProps) {
             )}
           </div>
 
-          {/* Dropdown */}
           {open && (
             <div className="nb-dropdown">
               {searching ? (
@@ -340,14 +319,12 @@ export default function Navbar({ onCreateClick }: NavbarProps) {
 
         {/* Right actions */}
         <div className="nb-actions">
-          {/* Create */}
           <button className="nb-btn nb-active" onClick={onCreateClick} title="Create post">
             <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
               <rect x="3" y="3" width="18" height="18" rx="5" stroke="currentColor" strokeWidth="1.8"/>
               <path d="M12 8v8M8 12h8" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round"/>
             </svg>
           </button>
-          {/* Notifications */}
           <button className="nb-btn" title="Notifications">
             <svg width="22" height="22" fill="none" viewBox="0 0 24 24">
               <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"/>
@@ -358,7 +335,6 @@ export default function Navbar({ onCreateClick }: NavbarProps) {
         </div>
       </header>
 
-      {/* In-flow spacer */}
       <div className="nb-spacer" aria-hidden="true"/>
     </>
   );
