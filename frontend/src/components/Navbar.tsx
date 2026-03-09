@@ -113,11 +113,11 @@ export default function Navbar({ onCreateClick }: NavbarProps) {
         @media (max-width: 1279px) { .nb-logo-text { display: none; } }
         @media (min-width: 1280px) { .nb-logo-text { display: block; } }
 
-        /* ── Search: pinned to true viewport center ── */
+        /* ── Search: right-aligned ── */
         .nb-search-wrap {
-          position: absolute;
-          left: 50%;
-          transform: translateX(-50%);
+          position: relative;
+          margin-left: auto;
+          margin-right: 12px;
           width: 268px;
         }
         .nb-search-box {
@@ -213,7 +213,7 @@ export default function Navbar({ onCreateClick }: NavbarProps) {
           flex-shrink: 0;
         }
 
-        .nb-actions { display: flex; align-items: center; gap: 2px; margin-left: auto; flex-shrink: 0; }
+        .nb-actions { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
         .nb-btn {
           width: 38px; height: 38px; border-radius: 10px;
           background: none; border: none; cursor: pointer;
@@ -256,7 +256,7 @@ export default function Navbar({ onCreateClick }: NavbarProps) {
           <span className="nb-logo-text">Instagram</span>
         </Link>
 
-        {/* Search — absolutely centered to viewport */}
+        {/* Search — right-aligned */}
         <div className="nb-search-wrap" ref={wrapRef}>
           <div className={`nb-search-box${focused ? ' is-focused' : ''}`}>
             <span className="nb-search-icon">
