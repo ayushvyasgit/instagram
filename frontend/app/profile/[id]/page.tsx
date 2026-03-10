@@ -21,15 +21,16 @@ export default function UserProfilePage() {
   const [viewMode, setViewMode]       = useState<'grid' | 'list'>('grid');
   const itemsPerPage = 12;
 
-  const { isAuthenticated, user: me } = useAppSelector((s: any) => s.auth);
+  const { isAuthenticated, user: me, authLoaded } = useAppSelector((s: any) => s.auth);
   const router  = useRouter();
   const endRef  = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!authLoaded) return;
     if (!isAuthenticated) { router.push('/login'); return; }
     if (profileId === me?.id) { router.push('/profile'); return; }
     loadProfile();
-  }, [isAuthenticated, profileId]);
+  }, [isAuthenticated, authLoaded, profileId]);
 
   useEffect(() => {
     if (page > 1) loadPosts(page);
@@ -70,7 +71,7 @@ export default function UserProfilePage() {
     setPosts(prev => prev.filter(p => p.id !== id));
   }, []);
 
-  if (!isAuthenticated) return null;
+  if (!authLoaded || !isAuthenticated) return null;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#000' }}>

@@ -106,8 +106,7 @@ export const postsSlice = createSlice({
     // ── NEW: cursor-based feed reducers ───────────────────────────────────────
 
     /**
-     * Replace the current feed page with cursor-fetched posts.
-     * Called for both next and prev navigation.
+     * Replace the current feed page with cursor-fetched posts (initial load / refresh).
      */
     setFeedPostsCursor: (
       state,
@@ -125,6 +124,28 @@ export const postsSlice = createSlice({
       state.feedHasNextPage = action.payload.hasNextPage;
       state.feedHasPreviousPage = action.payload.hasPreviousPage;
       state.feedLoading = false;
+    },
+
+    /**
+     * Append cursor-fetched posts to the existing feed (infinite scroll).
+     */
+    appendFeedPostsCursor: (
+      state,
+      action: PayloadAction<{
+        posts: Post[];
+        nextCursor: string | null;
+        prevCursor: string | null;
+        hasNextPage: boolean;
+        hasPreviousPage: boolean;
+      }>
+    ) => {
+      const existingIds = new Set(state.feedPosts.map((p) => p.id));
+      const newPosts = action.payload.posts.filter((p) => !existingIds.has(p.id));
+      state.feedPosts = [...state.feedPosts, ...newPosts];
+      state.feedNextCursor = action.payload.nextCursor;
+      state.feedPrevCursor = action.payload.prevCursor;
+      state.feedHasNextPage = action.payload.hasNextPage;
+      state.feedHasPreviousPage = action.payload.hasPreviousPage;
     },
 
     // ── Existing user post reducers (UNCHANGED) ───────────────────────────────
@@ -224,6 +245,7 @@ export const {
   incrementCommentCount,
   // new cursor actions
   setFeedPostsCursor,
+  appendFeedPostsCursor,
   setUserPostsCursor,
 } = postsSlice.actions;
 

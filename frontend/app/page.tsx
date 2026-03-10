@@ -7,14 +7,14 @@ import { useRouter } from 'next/navigation';
 import Navbar from '@/src/components/Navbar';
 import Sidebar from '@/src/components/Sidebar';
 import CreatePostModal from '@/src/components/CreatePostModal';
-import { setFeedLoading, removePost, setFeedPostsCursor } from '@/src/store/postsSlice';
+import { setFeedLoading, removePost, setFeedPostsCursor, appendFeedPostsCursor } from '@/src/store/postsSlice';
 import PostCard from '@/src/components/PostCard';
 
 export default function FeedPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
 
-  const { isAuthenticated, user } = useAppSelector((state: any) => state.auth);
+  const { isAuthenticated, user, authLoaded } = useAppSelector((state: any) => state.auth);
   const { feedPosts, feedLoading, feedNextCursor, feedHasNextPage } =
     useAppSelector((state: any) => state.posts);
   const dispatch = useAppDispatch();
@@ -22,9 +22,10 @@ export default function FeedPage() {
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!authLoaded) return;
     if (!isAuthenticated) { router.push('/login'); return; }
     loadCursor(null, 'next');
-  }, [isAuthenticated]);
+  }, [isAuthenticated, authLoaded]);
 
   useEffect(() => {
     const el = sentinelRef.current;
@@ -54,15 +55,28 @@ export default function FeedPage() {
   const loadMore = async () => {
     if (!feedHasNextPage || !feedNextCursor) return;
     setLoadingMore(true);
-    try { await loadCursor(feedNextCursor, 'next'); }
-    finally { setLoadingMore(false); }
+    try {
+      const res = await postAPI.getFeedCursor(10, feedNextCursor, 'next');
+      const { posts, pagination } = res.data.data;
+      dispatch(appendFeedPostsCursor({
+        posts,
+        nextCursor: pagination.nextCursor,
+        prevCursor: pagination.prevCursor,
+        hasNextPage: pagination.hasNextPage,
+        hasPreviousPage: pagination.hasPreviousPage,
+      }));
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingMore(false);
+    }
   };
 
   const handlePostDeleted = useCallback(
     (id: string) => dispatch(removePost(id)), [dispatch]
   );
 
-  if (!isAuthenticated) return null;
+  if (!authLoaded || !isAuthenticated) return null;
 
   return (
     /*

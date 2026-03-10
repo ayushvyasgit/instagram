@@ -1,0 +1,95 @@
+## Complete Deployment Guide (From Scratch)
+
+### 1. Connect to EC2
+```powershell
+ssh -i "C:\Users\ayush\Desktop\ts-ayush.pem" ubuntu@13.233.194.8
+```
+
+---
+
+### 2. Install Docker
+```bash
+sudo apt update -y && sudo apt install docker.io -y
+sudo systemctl start docker
+sudo systemctl enable docker
+sudo usermod -aG docker ubuntu
+newgrp docker
+```
+
+---
+
+### 3. Install Docker Compose
+```bash
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose
+docker-compose --version
+```
+
+---
+
+### 4. Clean EC2 (if redeploying)
+```bash
+cd ~/instagram-main
+docker-compose -f docker-compose.production.yml down -v
+cd ~
+rm -rf ~/instagram-main
+```
+
+---
+
+### 5. Upload Project (new PowerShell terminal)
+```powershell
+scp -i "C:\Users\ayush\Desktop\ts-ayush.pem" -r "C:\Users\ayush\Desktop\instagram-main\instagram-main" ubuntu@13.233.194.8:~/
+```
+
+---
+
+### 6. Fix Permissions (back in SSH)
+```bash
+sudo chmod -R 777 ~/instagram-main/backend/migrations
+sudo chmod -R 755 ~/instagram-main/
+```
+
+---
+
+### 7. Deploy
+```bash
+cd ~/instagram-main
+docker-compose -f docker-compose.production.yml up -d --build
+```
+
+---
+
+### 8. Check Status
+```bash
+docker-compose -f docker-compose.production.yml ps
+```
+
+---
+
+### 9. Visit App
+```
+http://13.233.194.8
+```
+
+---
+
+## Useful Commands
+```bash
+# View all logs
+docker-compose -f docker-compose.production.yml logs -f
+
+# View specific service logs
+docker-compose -f docker-compose.production.yml logs -f postgres
+docker-compose -f docker-compose.production.yml logs -f backend
+docker-compose -f docker-compose.production.yml logs -f frontend
+
+# Stop everything
+docker-compose -f docker-compose.production.yml down
+
+# Restart everything
+docker-compose -f docker-compose.production.yml restart
+
+# Check running containers
+docker ps
+```

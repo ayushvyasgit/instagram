@@ -19,14 +19,15 @@ export default function ProfilePage() {
   const [loading, setLoading]       = useState(false);
   const itemsPerPage = 12;
 
-  const { isAuthenticated, user } = useAppSelector((s: any) => s.auth);
+  const { isAuthenticated, user, authLoaded } = useAppSelector((s: any) => s.auth);
   const router    = useRouter();
   const endRef    = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!authLoaded) return;
     if (!isAuthenticated) { router.push('/login'); return; }
     loadPosts(1);
-  }, [isAuthenticated]);
+  }, [isAuthenticated, authLoaded]);
 
   useEffect(() => {
     if (page > 1) loadPosts(page);
@@ -59,7 +60,7 @@ export default function ProfilePage() {
     setTotal(prev => prev - 1);
   }, []);
 
-  if (!isAuthenticated) return null;
+  if (!authLoaded || !isAuthenticated) return null;
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', minHeight: '100vh', background: '#000' }}>
